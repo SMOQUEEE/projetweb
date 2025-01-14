@@ -1,0 +1,219 @@
+{% extends 'administrator/base.html' %}
+{% load static %}
+
+{% block content %}
+{% csrf_token %}
+<div class="admin-container">
+    <h1>Gestion des utilisateurs</h1>
+
+    <div class="users-grid">
+        {% for item in user_data %}
+        <div class="user-card">
+            <div class="user-header">
+                <h2>{{ item.user.prenom }} {{ item.user.nom }}</h2>
+                <div class="user-actions">
+                    <button class="btn {% if not item.user.is_blocked %}btn-danger{% else %}btn-success{% endif %}" 
+                            onclick="toggleUserBlock('{{ item.user.numero_etudiant }}')">
+                        {% if not item.user.is_blocked %}Bloquer{% else %}Débloquer{% endif %}
+                    </button>
+                </div>
+            </div>
+            <div class="user-info">
+                <p><strong>Numéro étudiant :</strong> {{ item.user.numero_etudiant }}</p>
+                <p><strong>Email :</strong> {{ item.user.email }}</p>
+                <p><strong>Statut :</strong> 
+                    <span class="status-badge {% if not item.user.is_blocked %}status-active{% else %}status-blocked{% endif %}">
+                        {% if not item.user.is_blocked %}Actif{% else %}Bloqué{% endif %}
+                    </span>
+                </p>
+                <p><strong>Réservations futures :</strong> {{ item.total_reservations }}</p>
+            </div>
+            {% if item.reservations %}
+            <div class="user-reservations">
+                <h3>Prochaines réservations</h3>
+                <ul>
+                    {% for reservation in item.reservations %}
+                    <li>
+                        Box {{ reservation.box.nom_ufr }} - 
+                        {{ reservation.creneau_horaire|date:"d/m/Y H:i" }}
+                        <button class="btn btn-danger btn-sm" onclick="deleteReservation({{ reservation.id }})">
+                            Annuler
+                        </button>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Aucun utilisateur trouvé</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+async function toggleUserBlock(numeroEtudiant) {
+    if (!confirm('Êtes-vous sûr de vouloir modifier le statut de cet utilisateur ?')) {
+        return;
+    }
+    
+    try {
+        const csrftoken = getCookie('csrftoken');
+        const response = await fetch(`/administrator/users/${numeroEtudiant}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (data.message) {
+                alert(data.message);
+            }
+            location.reload();
+        } else {
+            alert(data.message || 'Une erreur est survenue');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Une erreur est survenue lors de la communication avec le serveur');
+    }
+}
+
+async function deleteReservation(reservationId) {
+    if (!confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
+        return;
+    }
+    
+    try {
+        const csrftoken = getCookie('csrftoken');
+        const response = await fetch(`/administrator/reservations/${reservationId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (data.message) {
+                alert(data.message);
+            }
+            location.reload();
+        } else {
+            alert(data.message || 'Une erreur est survenue lors de l\'annulation');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Une erreur est survenue lors de la communication avec le serveur');
+    }
+}
+</script>
+
+<style>
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.user-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.user-header h2 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.user-info p {
+    margin: 8px 0;
+}
+
+.user-reservations {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.user-reservations h3 {
+    font-size: 1em;
+    margin-bottom: 10px;
+}
+
+.user-reservations ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.user-reservations li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.status-active {
+    background-color: #e3fcef;
+    color: #0a7b3f;
+}
+
+.status-blocked {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.9em;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    grid-column: 1 / -1;
+}
+</style>
+{% endblock %}

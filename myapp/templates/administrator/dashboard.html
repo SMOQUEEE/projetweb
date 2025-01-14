@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - Administration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1 class="admin-title">Tableau de bord</h1>
+            <nav class="admin-nav">
+                <a href="{% url 'admin_dashboard' %}" class="active">Tableau de bord</a>
+                <a href="{% url 'admin_users' %}">Utilisateurs</a>
+                <a href="{% url 'admin_boxes' %}">Boxes</a>
+                <a href="{% url 'admin_reservations' %}">Réservations</a>
+                <a href="{% url 'menu' %}">Retour au menu</a>
+            </nav>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ total_users }}</div>
+                    <div class="stat-label">Utilisateurs inscrits</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ available_boxes }}</div>
+                    <div class="stat-label">Boxes disponibles</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ total_reservations }}</div>
+                    <div class="stat-label">Réservations totales</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-grid">
+            <div class="admin-card">
+                <h2 class="card-title">Réservations récentes</h2>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Étudiant</th>
+                                <th>Box</th>
+                                <th>Date et heure</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in recent_reservations %}
+                            <tr>
+                                <td>{{ reservation.numero_etudiant.numero_etudiant }}</td>
+                                <td>{{ reservation.box.nom_ufr }}</td>
+                                <td>{{ reservation.creneau_horaire|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <span class="status-badge status-active">Active</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="empty-state">Aucune réservation récente</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h2 class="card-title">Statistiques des réservations</h2>
+                <div class="chart-container">
+                    <canvas id="reservationsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Exemple de graphique pour les statistiques
+        const ctx = document.getElementById('reservationsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
+                datasets: [{
+                    label: 'Réservations par jour',
+                    data: [12, 19, 15, 17, 14],
+                    borderColor: 'rgb(37, 99, 235)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

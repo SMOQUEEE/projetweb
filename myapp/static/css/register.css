@@ -1,0 +1,59 @@
+.register-container {
+    width: 500px;
+}
+
+.select-group {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.select-group select {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 16px;
+    transition: 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    appearance: none;
+    cursor: pointer;
+}
+
+.select-group::after {
+    content: '▼';
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    pointer-events: none;
+    font-size: 12px;
+}
+
+.select-group select:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.select-group select option {
+    background: #244d61;
+    color: white;
+}
+
+.success-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    background: rgba(103, 178, 111, 0.9);
+    color: white;
+    border-radius: 8px;
+    transform: translateX(120%);
+    transition: transform 0.3s ease-out;
+}
+
+.success-message.show {
+    transform: translateX(0);
+}

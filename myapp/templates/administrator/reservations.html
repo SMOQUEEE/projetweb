@@ -1,0 +1,195 @@
+{% extends 'administrator/base.html' %}
+{% load static %}
+
+{% block content %}
+{% csrf_token %}
+<div class="admin-container">
+    <h1>Gestion des réservations</h1>
+
+    <div class="admin-card">
+        <div class="search-bar">
+            <input type="text" id="searchInput" class="search-input" placeholder="Rechercher une réservation...">
+            <button class="btn btn-primary" onclick="filterReservations()">Rechercher</button>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Étudiant</th>
+                    <th>Box</th>
+                    <th>Date et heure</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr data-reservation-id="{{ reservation.id }}" class="reservation-row">
+                    <td class="student-number">{{ reservation.numero_etudiant.numero_etudiant }}</td>
+                    <td>{{ reservation.box.nom_ufr }}</td>
+                    <td>{{ reservation.creneau_horaire|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        <span class="status-badge status-active">Active</span>
+                    </td>
+                    <td class="action-buttons">
+                        <button class="btn btn-danger" onclick="deleteReservation({{ reservation.id }})">
+                            Annuler
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="empty-state">Aucune réservation trouvée</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+async function deleteReservation(reservationId) {
+    if (!confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
+        return;
+    }
+    
+    try {
+        const csrftoken = getCookie('csrftoken');
+        const response = await fetch(`/administrator/reservations/${reservationId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (data.message) {
+                alert(data.message);
+            }
+            const row = document.querySelector(`tr[data-reservation-id="${reservationId}"]`);
+            row.remove();
+            
+            // Si c'était la dernière réservation, afficher le message "Aucune réservation"
+            const remainingRows = document.querySelectorAll('.reservation-row');
+            if (remainingRows.length === 0) {
+                const tbody = document.querySelector('tbody');
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = '<td colspan="5" class="empty-state">Aucune réservation trouvée</td>';
+                tbody.appendChild(emptyRow);
+            }
+        } else {
+            alert(data.message || 'Une erreur est survenue lors de l\'annulation');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Une erreur est survenue lors de la communication avec le serveur');
+    }
+}
+
+function filterReservations() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.reservation-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const studentNumber = row.querySelector('.student-number').textContent.toLowerCase();
+        if (studentNumber.includes(searchText)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Gérer l'affichage du message "Aucune réservation"
+    const tbody = document.querySelector('tbody');
+    const existingEmptyMessage = document.querySelector('.empty-state')?.parentElement;
+    if (existingEmptyMessage) {
+        existingEmptyMessage.remove();
+    }
+
+    if (visibleCount === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="5" class="empty-state">Aucune réservation trouvée</td>';
+        tbody.appendChild(emptyRow);
+    }
+}
+
+// Ajouter la recherche en temps réel
+document.getElementById('searchInput').addEventListener('input', filterReservations);
+</script>
+
+<style>
+.empty-state {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.search-bar {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+</style>
+{% endblock %}

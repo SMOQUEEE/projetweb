@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Utilisateurs</title>
+</head>
+<body>
+    <h1>Liste des Utilisateurs</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Numéro d'étudiant</th>
+                <th>Prénom</th>
+                <th>Nom</th>
+                <th>Année d'étude</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for utilisateur in utilisateurs %}
+            <tr>
+                <td>{{ utilisateur.numero_etudiant }}</td>
+                <td>{{ utilisateur.prenom }}</td>
+                <td>{{ utilisateur.nom }}</td>
+                <td>{{ utilisateur.annee_etude }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

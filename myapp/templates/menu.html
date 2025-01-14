@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibliothèque Paris Nanterre - Planning</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/menu.css' %}">
+    <style>
+        .disabled {
+            opacity: 0.6;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    
+    <div class="app-container">
+        <div class="top-bar">
+            <div class="brand">
+                <h1>Bibliothèque Paris Nanterre</h1>
+            </div>
+            <div class="navigation">
+                <button class="nav-btn prev-week" id="prev-week-btn">◀</button>
+                <span class="current-week">Semaine du <span id="weekStart"></span></span>
+                <button class="nav-btn next-week" id="next-week-btn">▶</button>
+                <a href="{% url 'user' %}" class="nav-btn">👤</a>
+                <a href="{% url 'logout' %}" class="nav-btn logout-btn" title="Déconnexion">🚪</a>
+            </div>
+        </div>
+
+        <div class="calendar-container">
+            <div class="calendar-grid">
+                <div class="weekdays">
+                    <div class="weekday"></div>
+                    <div class="weekday">Lundi</div>
+                    <div class="weekday">Mardi</div>
+                    <div class="weekday">Mercredi</div>
+                    <div class="weekday">Jeudi</div>
+                    <div class="weekday">Vendredi</div>
+                    <div class="weekday">Samedi</div>
+                </div>
+                
+                <div class="time-column" id="timeColumn"></div>
+                <div class="slots-container" id="slotsGrid"></div>
+                 {% if user.is_admin %}
+            <div class="admin-button">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-admin">
+                    Administration
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <h2>Réserver un box</h2>
+            <p class="slot-info"></p>
+            <div class="box-list" id="boxList"></div>
+            <div class="modal-buttons">
+                <button class="btn cancel-btn">Annuler</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentWeek = new Date();
+        let isNavigating = false;
+        let isButtonDisabled = false;
+
+        function disableButton(button) {
+            if (isButtonDisabled) return false;
+            
+            isButtonDisabled = true;
+            button.classList.add('disabled');
+            
+            setTimeout(() => {
+                isButtonDisabled = false;
+                button.classList.remove('disabled');
+            }, 1000);
+            
+            return true;
+        }
+
+        function updateWeek() {
+            const weekStart = new Date(currentWeek);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+            
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            document.getElementById('weekStart').textContent = 
+                `${weekStart.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} au ${weekEnd.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}`;
+            
+            // Mettre à jour la grille des créneaux
+            updateSlotsGrid(weekStart);
+        }
+
+        document.querySelector('.prev-week').addEventListener('click', () => {
+            if (!disableButton(document.getElementById('prev-week-btn'))) return;
+            
+            if (!isNavigating) {
+                isNavigating = true;
+                currentWeek.setDate(currentWeek.getDate() - 7);
+                updateWeek();
+                setTimeout(() => { isNavigating = false; }, 1000);
+            }
+        });
+
+        document.querySelector('.next-week').addEventListener('click', () => {
+            if (!disableButton(document.getElementById('next-week-btn'))) return;
+            
+            if (!isNavigating) {
+                isNavigating = true;
+                currentWeek.setDate(currentWeek.getDate() + 7);
+                updateWeek();
+                setTimeout(() => { isNavigating = false; }, 1000);
+            }
+        });
+    </script>
+    <script src="{% static 'js/api/reservation_api.js' %}"></script>
+    <script src="{% static 'js/menu.js' %}"></script>
+</body>
+</html>
